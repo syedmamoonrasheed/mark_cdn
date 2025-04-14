@@ -1,195 +1,296 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Website CDN</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
-  <style>
-    body { background-color: white; }
-    .container { max-width: 960px; }
-    .card {
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-top: 20px;
-      border: none;
-    }
-    .form-group { margin-bottom: 15px; }
-    .btn-primary {
-      background-color: #956FD6;
-      border-color: #956FD6;
-      color: white;
-    }
-    .btn-primary:hover {
-      background-color: #956FD6;
-      color: black;
-    }
-  </style>
-</head>
-<body>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card-body">
+    (function() {
+      // 1. Create and append the CSS styles
+      const style = document.createElement("style");
+      style.textContent = `
+        /* RESET & BASIC STYLES */
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: Arial, sans-serif;
+        }
+        body {
+          background-color: #f9f9f9;
+          min-height: 100vh;
+          position: relative;
+        }
+        /* FLOATING CALL BUTTON */
+        .floating-call-btn {
+          position: fixed;
+          bottom: 30px;
+          right: 30px;
+          background-color: #9A58E1;
+          color: #fff;
+          border: none;
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 999;
+        }
+        /* POPUP WRAPPER */
+        .popup {
+          position: fixed;
+          bottom: 100px; /* just above the floating button */
+          right: 30px;
+          width: 350px;
+          max-width: 90%;
+          border-radius: 10px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          background-color: #fff;
+          display: none; /* hidden by default */
+          z-index: 1000;
+        }
+        .popup.show {
+          display: block; /* show when .show is added */
+        }
+        /* CARD INSIDE POPUP */
+        .bland-card {
+          overflow: hidden;
+          border-radius: 10px;
+        }
+        /* TOP SECTION */
+        .bland-card-header {
+          position: relative;
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          background-color: #fff;
+        }
+        .brand-icon {
+          width: 50px;
+          height: 40px;
+          background-color: #9A58E1;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 12px;
+          margin-bottom: 2px;
+        }
+        .brand-icon span {
+          color: #fff;
+          font-weight: 700;
+          font-size: 1.2rem;
+        }
+        .card-texts {
+          display: flex;
+          flex-direction: column;
+        }
+        .card-texts h2 {
+          font-size: 1.1rem;
+          margin-bottom: 4px;
+          color: #333;
+        }
+        .card-texts p {
+          font-size: 0.9rem;
+          color: #555;
+        }
+        /* Dynamic time in top-right corner */
+        .card-time {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          font-size: 0.9rem;
+          color: #333;
+        }
+        /* BOTTOM SECTION */
+        .bland-card-body {
+          background-color: #fff;
+          padding: 16px;
+        }
+        /* Styling select element similar to the phone input */
+        .agent-select,
+        .phone-input {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ccc;
+          border-radius: 20px;
+          margin-bottom: 12px;
+          font-size: 1rem;
+          outline: none;
+        }
+        .talk-btn {
+          width: 100%;
+          padding: 12px;
+          background-color: #9A58E1;
+          color: #fff;
+          border: none;
+          border-radius: 20px;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+        .talk-btn:hover {
+          opacity: 0.9;
+        }
+      `;
+      document.head.appendChild(style);
 
-          <!-- Agent Selection Dropdown -->
-          <div class="form-group">
-            <label for="select_agent">Select Agent</label>
-            <select class="form-control" id="select_agent">
-              <option value="">New Agent</option>
-            </select>
-          </div>
+      // 2. Create the floating call button with phone icon SVG
+      const floatingButton = document.createElement("button");
+      floatingButton.className = "floating-call-btn";
+      floatingButton.id = "togglePopupBtn";
+      floatingButton.innerHTML = `
+        <svg width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+          <path d="M22 16.92v3.09c0 .83-.67 1.5-1.5 1.5C9.4 21.51 
+                   2.49 14.6 2.49 3.5 2.49 2.67 3.16 2 3.99 2H7.1c.83 
+                   0 1.5.67 1.5 1.5 0 1.32.2 2.59.57 3.8.15.5 0 
+                   1.05-.36 1.41l-1.6 1.6c1.34 2.52 3.39 4.57 
+                   5.91 5.91l1.6-1.6c.36-.36.91-.51 1.41-.36 
+                   1.21.38 2.48.57 3.8.57.83 0 1.5.67 
+                   1.5 1.5z"/>
+        </svg>
+      `;
+      document.body.appendChild(floatingButton);
 
-          <h4>Update Website Calling</h4>
-          <form id="recallUpdateForm" action="{{ url_for('recall_update') }}" method="post" class="mt-4">
-            <input type="hidden" id="agent_index" name="agent_index" value="">
-            <input type="hidden" id="agent_name" name="agent_name" value="">
+      // 3. Create the popup container and card structure
+      const popup = document.createElement("div");
+      popup.className = "popup";
+      popup.id = "popup";
 
-            <!-- From Number -->
-            <div class="form-group">
-              <label for="from_number">From Number</label>
-              <select class="form-control" id="from_number" name="from_number">
-                <option value="">Select a number</option>
-              </select>
-            </div>
+      // Create card container
+      const blandCard = document.createElement("div");
+      blandCard.className = "bland-card";
+      popup.appendChild(blandCard);
 
-            <!-- Prompt Textarea -->
-            <div class="form-group">
-              <label for="promptTextarea">Prompt</label>
-              <textarea style="height: 315px;" class="form-control" id="promptTextarea" name="prompt" placeholder="Describe the main business activities of your company.">{{ data.prompt or '' }}</textarea>
-            </div>
+      // Create top section (header)
+      const blandCardHeader = document.createElement("div");
+      blandCardHeader.className = "bland-card-header";
+      blandCard.appendChild(blandCardHeader);
 
-            <!-- First Sentence -->
-            <div class="form-group">
-              <label for="first_sentence">First Sentence</label>
-              <input type="text" class="form-control" id="first_sentence" name="first_sentence" placeholder="Enter the first sentence." value="{{ data.first_sentence or '' }}">
-            </div>
+      // Brand icon inside header
+      const brandIcon = document.createElement("div");
+      brandIcon.className = "brand-icon";
+      const brandIconSpan = document.createElement("span");
+      brandIconSpan.innerHTML = `
+        <svg width="24" height="17" fill="#fff" viewBox="0 0 24 24">
+          <path d="M22 16.92v3.09c0 .83-.67 1.5-1.5 1.5C9.4 21.51 
+                   2.49 14.6 2.49 3.5 2.49 2.67 3.16 2 3.99 2H7.1c.83 
+                   0 1.5.67 1.5 1.5 0 1.32.2 2.59.57 3.8.15.5 0 
+                   1.05-.36 1.41l-1.6 1.6c1.34 2.52 3.39 4.57 
+                   5.91 5.91l1.6-1.6c.36-.36.91-.51 1.41-.36 
+                   1.21.38 2.48.57 3.8.57.83 0 1.5.67 
+                   1.5 1.5z"/>
+        </svg>
+      `;
+      brandIcon.appendChild(brandIconSpan);
+      blandCardHeader.appendChild(brandIcon);
 
-            <div class="form-group">
-              <label for="lang">Language</label>
-              <select class="form-control" id="lang" name="lang">
-                <option value="bg" {% if data.lang=='bg' %}selected{% endif %}>Bulgarian</option>
-                <option value="ca" {% if data.lang=='ca' %}selected{% endif %}>Catalan</option>
-                <option value="zh" {% if data.lang=='zh' %}selected{% endif %}>Chinese</option>
-                <option value="zh-TW" {% if data.lang=='zh-TW' %}selected{% endif %}>Chinese (Taiwan)</option>
-                <option value="zh-HK" {% if data.lang=='zh-HK' %}selected{% endif %}>Chinese (Hong Kong)</option>
-                <option value="cs" {% if data.lang=='cs' %}selected{% endif %}>Czech</option>
-                <option value="da" {% if data.lang=='da' %}selected{% endif %}>Danish</option>
-                <option value="nl" {% if data.lang=='nl' %}selected{% endif %}>Dutch</option>
-                <option value="en-US" {% if data.lang=='en-US' %}selected{% endif %}>English (US)</option>
-                <option value="en-GB" {% if data.lang=='en-GB' %}selected{% endif %}>English (UK)</option>
-                <option value="en-AU" {% if data.lang=='en-AU' %}selected{% endif %}>English (Australia)</option>
-                <option value="en-NZ" {% if data.lang=='en-NZ' %}selected{% endif %}>English (New Zealand)</option>
-                <option value="en-IN" {% if data.lang=='en-IN' %}selected{% endif %}>English (India)</option>
-                <option value="hi" {% if data.lang=='hi' %}selected{% endif %}>Hindi</option>
-                <option value="fr" {% if data.lang=='fr' %}selected{% endif %}>French</option>
-                <option value="de" {% if data.lang=='de' %}selected{% endif %}>German</option>
-                <option value="ja" {% if data.lang=='ja' %}selected{% endif %}>Japanese</option>
-                <option value="ko" {% if data.lang=='ko' %}selected{% endif %}>Korean</option>
-                <option value="es" {% if data.lang=='es' %}selected{% endif %}>Spanish</option>
-                <option value="sv" {% if data.lang=='sv' %}selected{% endif %}>Swedish</option>
-                <option value="pt" {% if data.lang=='pt' %}selected{% endif %}>Portuguese</option>
-                <option value="it" {% if data.lang=='it' %}selected{% endif %}>Italian</option>
-                <option value="ru" {% if data.lang=='ru' %}selected{% endif %}>Russian</option>
-                <option value="tr" {% if data.lang=='tr' %}selected{% endif %}>Turkish</option>
-                <option value="vi" {% if data.lang=='vi' %}selected{% endif %}>Vietnamese</option>
-                <option value="th" {% if data.lang=='th' %}selected{% endif %}>Thai</option>
-                <option value="pl" {% if data.lang=='pl' %}selected{% endif %}>Polish</option>
-              </select>
-            </div>
-            
+      // Text container for header
+      const cardTexts = document.createElement("div");
+      cardTexts.className = "card-texts";
+      const headerTitle = document.createElement("h2");
+      headerTitle.textContent = "Talk With Our AI";
+      const headerSub = document.createElement("p");
+      headerSub.textContent = "Revolutionize Customer Communication Experience";
+      cardTexts.appendChild(headerTitle);
+      cardTexts.appendChild(headerSub);
+      blandCardHeader.appendChild(cardTexts);
 
-            <!-- Voice + Transfer -->
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="voice">Voice Selection</label>
-                <select class="form-control" id="voice" name="voice">
-                  <option value="">Select a voice</option>
-                </select>
-              </div>
-              <div class="form-group col-md-6">
-                <label for="transfer_number">Transfer Call Number</label>
-                <input type="tel" class="form-control" id="transfer_number" name="transfer_number" placeholder="Enter transfer number" value="{{ data.transfer_number or '' }}">
-              </div>
-            </div>
+      // Dynamic time display in header
+      const cardTime = document.createElement("span");
+      cardTime.className = "card-time";
+      cardTime.id = "cardTime";
+      cardTime.textContent = "9:41 AM"; // initial placeholder
+      blandCardHeader.appendChild(cardTime);
 
-            <button type="submit" class="btn btn-primary">Update</button>
-          </form>
+      // Create bottom section (card body)
+      const blandCardBody = document.createElement("div");
+      blandCardBody.className = "bland-card-body";
+      blandCard.appendChild(blandCardBody);
 
-        </div>
-      </div>
-    </div>
-  </div>
+      // Agent Dropdown (New)
+      const agentSelect = document.createElement("select");
+      agentSelect.id = "agent_select";
+      agentSelect.className = "agent-select";
+      agentSelect.innerHTML = '<option value="">Select an Agent</option>';
+      blandCardBody.appendChild(agentSelect);
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      // Twilio Numbers
-      fetch('https://talk-to-emmy.lexatalk.com/get_twilio_numbers')
-        .then(res => res.json())
-        .then(data => {
-          const dropdown = document.getElementById('from_number');
-          dropdown.innerHTML = '<option value="">Select a number</option>';
-          data.numbers?.forEach(num => {
-            const option = document.createElement('option');
-            option.value = num.phone_number;
-            option.textContent = num.phone_number;
-            dropdown.appendChild(option);
+      // Phone Number Input
+      const phoneInput = document.createElement("input");
+      phoneInput.type = "text";
+      phoneInput.className = "phone-input";
+      phoneInput.id = "phoneInput";
+      phoneInput.placeholder = "Enter Phone Number";
+      blandCardBody.appendChild(phoneInput);
+
+      // "Let's Talk" Button
+      const talkBtn = document.createElement("button");
+      talkBtn.className = "talk-btn";
+      talkBtn.id = "talkBtn";
+      talkBtn.textContent = "Let's Talk";
+      blandCardBody.appendChild(talkBtn);
+
+      // Append popup to body
+      document.body.appendChild(popup);
+
+      // 4. Add JavaScript functionality
+
+      // Toggle popup visibility when clicking the floating button
+      floatingButton.addEventListener("click", () => {
+        popup.classList.toggle("show");
+      });
+
+      // Dynamic time update function (12-hour format)
+      function updateCardTime() {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours || 12;
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        cardTime.textContent = hours + ":" + minutes + " " + ampm;
+      }
+      updateCardTime();
+
+      // Populate agent dropdown by fetching from Flask backend
+      fetch("http://127.0.0.1:5000/get-agent-names")
+        .then(response => response.json())
+        .then(agents => {
+          // Clear the initial option and add agents
+          agentSelect.innerHTML = '<option value="">Select an Agent</option>';
+          agents.forEach(agent => {
+            const option = document.createElement("option");
+            option.value = agent.agent_index; // using index as backend identifier
+            option.textContent = agent.agent_name || `Agent ${agent.agent_index + 1}`;
+            agentSelect.appendChild(option);
           });
-        });
+        })
+        .catch(error => console.error("Error loading agents:", error));
 
-      // Fetch Prompts
-      fetch('https://talk-to-emmy.lexatalk.com/fetch_prompts')
-        .then(res => res.json())
-        .then(prompts => {
-          const dropdown = document.getElementById('select_agent');
-          dropdown.innerHTML = '<option value="">New Agent</option>';
-          prompts.forEach((item, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = item.name;
-            option.dataset.prompt = item.prompt;
-            dropdown.appendChild(option);
+      // Event listener for "Let's Talk" button to send call request
+      talkBtn.addEventListener("click", function() {
+        const phoneNumber = phoneInput.value.trim();
+        const selectedAgentId = agentSelect.value;
+        if (!phoneNumber) {
+          alert("Please enter a phone number.");
+          return;
+        }
+        if (!selectedAgentId) {
+          alert("Please select an agent.");
+          return;
+        }
+        fetch("http://127.0.0.1:5000/send_call", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone_number: phoneNumber,
+            agent_index: selectedAgentId
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log("Call response:", data);
+            alert("Call sent successfully!");
+          })
+          .catch(err => {
+            console.error("Call error:", err);
+            alert("Failed to send call.");
           });
-
-          dropdown.addEventListener('change', function () {
-            const selected = this.options[this.selectedIndex];
-            document.getElementById('promptTextarea').value = selected.dataset.prompt || "";
-            document.getElementById('agent_name').value = selected.textContent || "";
-          });
-        });
-
-      // Last config
-      fetch('/get_recall_data')
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('promptTextarea').value = data.prompt || "";
-          document.getElementById('first_sentence').value = data.first_sentence || "";
-          document.getElementById('lang').value = data.lang || "en";
-          document.getElementById('voice').value = data.voice || "";
-          document.getElementById('transfer_number').value = data.transfer_number || "";
-          if (data.from_number)
-            document.getElementById('from_number').value = data.from_number;
-          if (data.agent_name)
-            document.getElementById('agent_name').value = data.agent_name;
-        });
-
-      // ElevenLabs Voices
-      fetch('https://talk-to-emmy.lexatalk.com/get_elevenlabs_voices')
-        .then(res => res.json())
-        .then(data => {
-          const dropdown = document.getElementById('voice');
-          dropdown.innerHTML = '<option value="">Select a voice</option>';
-          data.voices?.forEach(voice => {
-            const option = document.createElement('option');
-            option.value = voice.voice_id || voice.id;
-            option.textContent = `${voice.name} (${voice.labels?.accent || 'No accent'})`;
-            dropdown.appendChild(option);
-          });
-        });
-    });
-  </script>
-</body>
-</html>
+      });
+    })();
