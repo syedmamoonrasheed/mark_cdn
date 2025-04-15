@@ -249,7 +249,7 @@
       updateCardTime();
 
       // Populate agent dropdown by fetching from Flask backend
-      fetch("http://127.0.0.1:5000/get-agent-names")
+      fetch("https://talk-to-emmy.lexatalk.com/get-agent-names")
         .then(response => response.json())
         .then(agents => {
           // Clear the initial option and add agents
@@ -275,7 +275,7 @@
           alert("Please select an agent.");
           return;
         }
-        fetch("http://127.0.0.1:5000/send_call", {
+        fetch("https://mark-cdn.aireceptionistpro.com/send_call", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
