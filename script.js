@@ -249,7 +249,7 @@
       updateCardTime();
 
       // Populate agent dropdown by fetching from Flask backend
-      fetch("https://talk-to-emmy.lexatalk.com/get-agent-names")
+      fetch("https://mark-cdn.aireceptionistpro.com/get-agent-names")
         .then(response => response.json())
         .then(agents => {
           // Clear the initial option and add agents
